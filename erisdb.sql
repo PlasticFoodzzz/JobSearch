@@ -8,7 +8,7 @@
 
 SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 
--- Original database creation here
+-- Create the database
 CREATE DATABASE IF NOT EXISTS `erisdb`;
 USE `erisdb`;
 
@@ -34,8 +34,6 @@ CREATE TABLE IF NOT EXISTS `tblapplicants` (
   PRIMARY KEY (`APPLICANTID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=2018016;
 
--- Add other tables like tblattachmentfile, tblautonumbers, tblcategory, etc. (from your original SQL)
-
 -- Table structure for `tbljob`
 CREATE TABLE IF NOT EXISTS `tbljob` (
   `JOBID` int(11) NOT NULL AUTO_INCREMENT,
@@ -54,8 +52,6 @@ CREATE TABLE IF NOT EXISTS `tbljob` (
   PRIMARY KEY (`JOBID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=3;
 
--- Original data dumping (INSERT statements) for all tables...
-
 -- Audit table for `tbljob`
 CREATE TABLE IF NOT EXISTS `tbljob_audit` (
     `audit_id` INT AUTO_INCREMENT PRIMARY KEY,
@@ -67,19 +63,7 @@ CREATE TABLE IF NOT EXISTS `tbljob_audit` (
     `description` TEXT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-DELIMITER $$
-CREATE TRIGGER `before_job_update`
-BEFORE UPDATE ON `tbljob`
-FOR EACH ROW
-BEGIN
-    INSERT INTO `tbljob_audit` (`job_id`, `changed_by`, `change_date`, `old_salary`, `new_salary`, `description`)
-    VALUES (OLD.JOBID, 'admin', NOW(), OLD.SALARIES, NEW.SALARIES, CONCAT('Job salary updated from ', OLD.SALARIES, ' to ', NEW.SALARIES));
-END$$
-DELIMITER ;
-
--- Similar triggers and audit tables for `tblapplicants`, `tblemployees`, `tbljobregistration`...
-
--- Example:
+-- Audit table for `tblapplicants`
 CREATE TABLE IF NOT EXISTS `tblapplicant_audit` (
     `audit_id` INT AUTO_INCREMENT PRIMARY KEY,
     `applicant_id` INT NOT NULL,
@@ -90,6 +74,19 @@ CREATE TABLE IF NOT EXISTS `tblapplicant_audit` (
     `description` TEXT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+-- Trigger for auditing updates to `tbljob`
+DELIMITER $$
+CREATE TRIGGER `before_job_update`
+BEFORE UPDATE ON `tbljob`
+FOR EACH ROW
+BEGIN
+    INSERT INTO `tbljob_audit` (`job_id`, `changed_by`, `change_date`, `old_salary`, `new_salary`, `description`)
+    VALUES (OLD.JOBID, 'admin', NOW(), OLD.SALARIES, NEW.SALARIES, 
+            CONCAT('Job salary updated from ', OLD.SALARIES, ' to ', NEW.SALARIES));
+END$$
+DELIMITER ;
+
+-- Trigger for auditing updates to `tblapplicants`
 DELIMITER $$
 CREATE TRIGGER `before_applicant_update`
 BEFORE UPDATE ON `tblapplicants`
@@ -100,8 +97,8 @@ BEGIN
         OLD.APPLICANTID,
         'admin',
         NOW(),
-        CONCAT('Old: ', OLD.FNAME, ' ', OLD.LNAME, ' ', OLD.ADDRESS),
-        CONCAT('New: ', NEW.FNAME, ' ', NEW.LNAME, ' ', NEW.ADDRESS),
+        CONCAT('Old: ', OLD.FNAME, ' ', OLD.LNAME, ', Address: ', OLD.ADDRESS),
+        CONCAT('New: ', NEW.FNAME, ' ', NEW.LNAME, ', Address: ', NEW.ADDRESS),
         'Applicant details updated.'
     );
 END$$
